@@ -1,0 +1,75 @@
+{
+    "model": "ClassroomSNN",
+    "dataset": "FER-2013 Official Test Set",
+    "test_images": 7178,
+    "accuracy": 0.4474784062412928,
+    "macro_precision": 0.39506953264280675,
+    "macro_recall": 0.3626985661532355,
+    "macro_f1_score": 0.351224715804744,
+    "macro_specificity": 0.9030224649080207,
+    "balanced_accuracy": 0.3626985661532355,
+    "macro_roc_auc_ovr": 0.7724437343995908,
+    "matthews_correlation_coefficient": 0.32525866468309,
+    "cohen_kappa": 0.3202240704874578,
+    "log_loss": 1.4626959240125,
+    "total_inference_time_seconds": 112.45162820001133,
+    "average_inference_time_per_image_seconds": 0.01566615048760258,
+    "throughput_fps": 63.831890341622255,
+    "classification_report": {
+        "angry": {
+            "precision": 0.29927007299270075,
+            "recall": 0.17118997912317327,
+            "f1-score": 0.21779548472775564,
+            "support": 958.0
+        },
+        "disgust": {
+            "precision": 0.25,
+            "recall": 0.009009009009009009,
+            "f1-score": 0.017391304347826087,
+            "support": 111.0
+        },
+        "fear": {
+            "precision": 0.3311965811965812,
+            "recall": 0.1513671875,
+            "f1-score": 0.20777479892761394,
+            "support": 1024.0
+        },
+        "happy": {
+            "precision": 0.5431411530815109,
+            "recall": 0.770011273957159,
+            "f1-score": 0.6369783166239217,
+            "support": 1774.0
+        },
+        "neutral": {
+            "precision": 0.36741973840665876,
+            "recall": 0.5012165450121655,
+            "f1-score": 0.42401372212692967,
+            "support": 1233.0
+        },
+        "sad": {
+            "precision": 0.34120734908136485,
+            "recall": 0.31275060144346434,
+            "f1-score": 0.3263598326359833,
+            "support": 1247.0
+        },
+        "surprise": {
+            "precision": 0.6332518337408313,
+            "recall": 0.6233453670276775,
+            "f1-score": 0.6282595512431777,
+            "support": 831.0
+        },
+        "accuracy": 0.4474784062412928,
+        "macro avg": {
+            "precision": 0.39506953264280675,
+            "recall": 0.3626985661532355,
+            "f1-score": 0.351224715804744,
+            "support": 7178.0
+        },
+        "weighted avg": {
+            "precision": 0.4209911967452508,
+            "recall": 0.4474784062412928,
+            "f1-score": 0.41866853645962226,
+            "support": 7178.0
+        }
+    }
+}

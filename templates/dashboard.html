@@ -1,0 +1,533 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+{% if active_page == "overview" or active_page == "engagement" %}
+
+{% set has_analysis = analysis and analysis.get("video_name") %}
+{% set expression_counts = analysis.get("expression_distribution", {}) if has_analysis else {} %}
+{% set total_expressions = namespace(value=0) %}
+
+{% for value in expression_counts.values() %}
+    {% set total_expressions.value = total_expressions.value + (value|int) %}
+{% endfor %}
+
+{% set coverage = namespace(value=0) %}
+{% if has_analysis and analysis.get("total_video_frames", 0)|int > 0 %}
+    {% set coverage.value = ((analysis.get("processed_frames", 0)|int / analysis.get("total_video_frames", 1)|int) * 100)|round|int %}
+{% endif %}
+
+
+<!-- DASHBOARD WELCOME -->
+<div class="welcome-banner">
+    <div>
+        <span class="eyebrow">AI-POWERED CLASSROOM INTELLIGENCE</span>
+        <h2>Overall Classroom Engagement Monitoring</h2>
+        <p>
+            Analyze classroom videos, recognize facial expressions
+            and monitor classroom activity using neural networks.
+        </p>
+    </div>
+    <div class="welcome-icon">◉</div>
+</div>
+
+
+<!-- CLASSROOM SUMMARY CARDS -->
+<div class="stats-grid">
+
+    <div class="stat-card">
+        <div class="stat-icon blue">♟</div>
+        <div>
+            <span>TEMPORARY STUDENT IDs</span>
+            <h2 id="studentsDetected">
+                {{ analysis.get("unique_temporary_student_ids", "--") if has_analysis else "--" }}
+            </h2>
+            <small>{{ "IDs assigned during video tracking" if has_analysis else "Awaiting video analysis" }}</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon green">◉</div>
+        <div>
+            <span>FACE DETECTIONS</span>
+            <h2 id="overallEngagement">
+                {{ analysis.get("total_face_detections", "--") if has_analysis else "--" }}
+            </h2>
+            <small>{{ "Total sampled-frame detections" if has_analysis else "Awaiting face detection" }}</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon yellow">▣</div>
+        <div>
+            <span>FRAMES ANALYZED</span>
+            <h2 id="framesAnalyzed">
+                {{ analysis.get("processed_frames", "--") if has_analysis else "--" }}
+            </h2>
+            <small>{{ "Frames processed by the system" if has_analysis else "Video processing pending" }}</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon purple">✦</div>
+        <div>
+            <span>MODEL</span>
+            <h2>SNN</h2>
+            <small>CNN-SNN hybrid expression checkpoint</small>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- MAIN ANALYTICS GRID -->
+<div class="dashboard-grid">
+
+    <!-- VIDEO PANEL -->
+    <div class="panel video-panel">
+
+        <div class="panel-heading">
+            <div>
+                <h3>Classroom Video Monitoring</h3>
+                <p>Processed video and student detection</p>
+            </div>
+
+            {% if has_analysis %}
+                <span class="status-tag">ANALYSIS COMPLETED</span>
+            {% else %}
+                <span class="status-tag">WAITING FOR VIDEO</span>
+            {% endif %}
+        </div>
+
+        {% if has_analysis %}
+
+            <div class="video-placeholder">
+
+                {% if latest_video_url %}
+
+                    <video controls preload="metadata"
+                           style="width:100%; max-width:100%; border-radius:12px;">
+
+                        <source
+                            src="{{ latest_video_url }}"
+                            type="video/mp4">
+
+                        Your browser does not support video playback.
+
+                    </video>
+
+                    <h3>{{ analysis.get("video_name", "Classroom video") }}</h3>
+                    <p>Latest browser-compatible H.264 annotated classroom video.</p>
+
+                {% else %}
+
+                    <div class="play-icon">▶</div>
+                    <h3>Processed video unavailable</h3>
+                    <p>The analysis report exists, but its browser-compatible video was not found.</p>
+
+                {% endif %}
+
+                <a href="{{ url_for('download_report') }}"
+                   class="primary-button">
+                    Download Analysis Report
+                </a>
+            </div>
+
+        {% else %}
+
+            <div class="video-placeholder">
+                <div class="play-icon">▶</div>
+                <h3>No classroom video analyzed</h3>
+                <p>Upload a classroom recording to begin monitoring.</p>
+
+                <a href="{{ url_for('page', slug='video-upload') }}"
+                   class="primary-button">
+                    Upload Classroom Video
+                </a>
+            </div>
+
+        {% endif %}
+
+        <div class="video-footer">
+            <span>Face detection:
+                {{ "Completed" if has_analysis else "Not started" }}
+            </span>
+            <span>Expression recognition:
+                {{ "Completed" if has_analysis else "Not started" }}
+            </span>
+        </div>
+
+    </div>
+
+
+    <!-- ANALYSIS COVERAGE GAUGE -->
+    <div class="panel engagement-panel">
+
+        <div class="panel-heading">
+            <div>
+                <h3>Video Analysis Coverage</h3>
+                <p>Percentage of video frames sampled</p>
+            </div>
+        </div>
+
+        <div class="gauge-placeholder">
+            <div class="gauge-circle">
+                <div class="gauge-inner">
+                    <strong>{{ coverage.value if has_analysis else "--" }}{% if has_analysis %}%{% endif %}</strong>
+                    <span>{{ "Analysis coverage" if has_analysis else "Not analyzed" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="engagement-legend">
+            <div>
+                <span class="legend-dot high"></span>
+                Total video frames
+                <strong>{{ analysis.get("total_video_frames", "--") if has_analysis else "--" }}</strong>
+            </div>
+
+            <div>
+                <span class="legend-dot medium"></span>
+                Frames analyzed
+                <strong>{{ analysis.get("processed_frames", "--") if has_analysis else "--" }}</strong>
+            </div>
+
+            <div>
+                <span class="legend-dot low"></span>
+                Sampling interval
+                <strong>{{ analysis.get("sample_interval", "--") if has_analysis else "--" }}</strong>
+            </div>
+        </div>
+
+        <p class="muted center-text">
+            This represents video sampling coverage, not student engagement.
+        </p>
+
+    </div>
+
+
+    <!-- ENGAGEMENT TREND -->
+    <div class="panel trend-panel">
+
+        <div class="panel-heading">
+            <div>
+                <h3>Expression Analysis Status</h3>
+                <p>Classroom video processing information</p>
+            </div>
+            <span class="tag">TIMELINE</span>
+        </div>
+
+        {% if has_analysis %}
+            <div class="chart-placeholder">
+                <span>▥</span>
+                <p>
+                    Successfully analyzed
+                    {{ analysis.get("processed_frames", 0) }}
+                    sampled frames from
+                    {{ analysis.get("video_name", "the uploaded video") }}.
+                </p>
+                <p>
+                    Video FPS: {{ analysis.get("video_fps", "--") }}
+                </p>
+            </div>
+        {% else %}
+            <div class="chart-placeholder">
+                <span>▥</span>
+                <p>Analysis information will appear after video processing.</p>
+            </div>
+        {% endif %}
+
+    </div>
+
+
+    <!-- EXPRESSION DISTRIBUTION -->
+    <div class="panel distribution-panel">
+
+        <div class="panel-heading">
+            <div>
+                <h3>Expression Distribution</h3>
+                <p>Seven FER-2013 expression classes</p>
+            </div>
+        </div>
+
+        <div class="expression-list">
+
+            {% for expression in ["Happy", "Neutral", "Sad", "Angry", "Fear", "Surprise", "Disgust"] %}
+
+                {% set count = expression_counts.get(expression|lower, 0)|int %}
+
+                {% if total_expressions.value > 0 %}
+                    {% set percentage = ((count / total_expressions.value) * 100)|round|int %}
+                {% else %}
+                    {% set percentage = 0 %}
+                {% endif %}
+
+                <div class="expression-row">
+                    <span>{{ expression }}</span>
+
+                    <div class="expression-track">
+                        {% if has_analysis %}
+                            <div style="width: {{ percentage }}%; height:100%; background:#22c55e; border-radius:inherit;"></div>
+                        {% endif %}
+                    </div>
+
+                    <strong>{{ count if has_analysis else "--" }}</strong>
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+        {% if has_analysis %}
+            <p class="muted">
+                Total expression predictions: {{ total_expressions.value }}
+            </p>
+        {% else %}
+            <p class="muted">No classroom expression data available yet.</p>
+        {% endif %}
+
+    </div>
+
+
+    <!-- AI SUMMARY -->
+    <div class="panel summary-panel">
+
+        <div class="panel-heading">
+            <div>
+                <h3>AI Classroom Summary</h3>
+                <p>Video analysis insights</p>
+            </div>
+            <span class="tag">AI INSIGHTS</span>
+        </div>
+
+        {% if has_analysis %}
+
+            <div class="summary-empty">
+                <div class="summary-icon">✦</div>
+
+                <h3>Video analysis completed</h3>
+
+                <p>
+                    The system analyzed
+                    {{ analysis.get("processed_frames", 0) }}
+                    frames and recorded
+                    {{ analysis.get("total_face_detections", 0) }}
+                    face detections.
+                </p>
+
+                <p>
+                    The face tracker assigned
+                    {{ analysis.get("unique_temporary_student_ids", 0) }}
+                    temporary IDs during the video.
+                </p>
+
+                <p>
+                    Expression predictions are experimental model outputs.
+                    They should not be treated as confirmed emotions,
+                    attention levels, or engagement scores.
+                </p>
+
+                <a href="{{ url_for('download_report') }}"
+                   class="primary-button">
+                    Download Full Report
+                </a>
+            </div>
+
+        {% else %}
+
+            <div class="summary-empty">
+                <div class="summary-icon">✦</div>
+                <h3>Waiting for classroom analysis</h3>
+                <p>
+                    Upload and process a classroom video to generate
+                    expression predictions and video analysis results.
+                </p>
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<!-- MODEL PERFORMANCE -->
+<div class="section-heading">
+    <div>
+        <h2>Expression Recognition Model Performance</h2>
+        <p>Existing FER-2013 official test evaluation</p>
+    </div>
+    <span class="tag">CURRENT MODEL BASELINE</span>
+</div>
+
+<div class="stats-grid model-stats">
+
+    <div class="metric-card">
+        <span>Test Accuracy</span>
+        <strong>{{ "%.2f"|format(metrics.get("accuracy", 0) * 100) }}%</strong>
+    </div>
+
+    <div class="metric-card">
+        <span>Macro Precision</span>
+        <strong>{{ "%.2f"|format(metrics.get("macro_precision", 0) * 100) }}%</strong>
+    </div>
+
+    <div class="metric-card">
+        <span>Macro Recall</span>
+        <strong>{{ "%.2f"|format(metrics.get("macro_recall", 0) * 100) }}%</strong>
+    </div>
+
+    <div class="metric-card">
+        <span>Macro F1-score</span>
+        <strong>{{ "%.2f"|format(metrics.get("macro_f1_score", 0) * 100) }}%</strong>
+    </div>
+
+</div>
+
+<div class="panel model-note">
+    <strong>Model architecture:</strong>
+    The current evaluated checkpoint is a CNN-SNN hybrid.
+    Pure SNN and EMS-ResNet are separate implementations still to be completed.
+    These FER-2013 test metrics are not classroom engagement scores.
+</div>
+
+
+{% elif active_page == "video-upload" %}
+
+<div class="panel upload-panel">
+
+    <div class="panel-heading">
+        <div>
+            <h3>Upload Classroom Recording</h3>
+            <p>Select a video for classroom monitoring and analysis.</p>
+        </div>
+        <span class="tag">VIDEO INPUT</span>
+    </div>
+
+    <form action="{{ url_for('upload') }}"
+          method="POST"
+          enctype="multipart/form-data">
+
+        <div class="upload-area">
+            <div class="upload-symbol">⇧</div>
+            <h3>Choose classroom video</h3>
+            <p>Supported formats: MP4, AVI, MOV, MKV and WEBM</p>
+
+            <input type="file"
+                   name="video"
+                   accept=".mp4,.avi,.mov,.mkv,.webm"
+                   required>
+        </div>
+
+        <button type="submit" class="primary-button">
+            Upload Video
+        </button>
+
+        <p class="muted">Maximum upload size: 500 MB</p>
+
+    </form>
+
+</div>
+
+
+<div class="panel">
+
+    <div class="panel-heading">
+        <div>
+            <h3>Uploaded Classroom Videos</h3>
+            <p>Files stored in your project.</p>
+        </div>
+    </div>
+
+    {% if videos %}
+        {% for video in videos %}
+
+        <div class="video-item">
+            <div>
+                <strong>{{ video.name }}</strong>
+                <small>{{ video.size }} MB</small>
+
+                <form action="{{ url_for('process_video', filename=video.name) }}"
+                      method="POST">
+                    <button type="submit" class="primary-button">
+                        Process Video
+                    </button>
+                </form>
+            </div>
+
+            <span class="tag">UPLOADED</span>
+        </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <div class="empty-state">
+            <span>▣</span>
+            <p>No classroom videos uploaded yet.</p>
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+{% elif active_page == "models" %}
+
+<div class="section-heading">
+    <div>
+        <h2>Expression Recognition Models</h2>
+        <p>Current implementation status</p>
+    </div>
+</div>
+
+<div class="model-grid">
+
+    <div class="panel">
+        <div class="stat-icon purple">✦</div>
+        <h3>CNN-SNN Hybrid</h3>
+        <span class="status-tag">EVALUATED</span>
+        <p>Existing trained checkpoint evaluated on FER-2013.</p>
+        <h2>{{ "%.2f"|format(metrics.get("accuracy", 0) * 100) }}%</h2>
+        <small>Test accuracy</small>
+    </div>
+
+    <div class="panel">
+        <div class="stat-icon blue">◉</div>
+        <h3>Pure SNN</h3>
+        <span class="pending-tag">PENDING</span>
+        <p>Separate spiking neural network without convolutional layers.</p>
+    </div>
+
+    <div class="panel">
+        <div class="stat-icon green">⬡</div>
+        <h3>EMS-ResNet</h3>
+        <span class="pending-tag">PENDING</span>
+        <p>Separate facial expression recognition model.</p>
+    </div>
+
+</div>
+
+
+{% else %}
+
+<div class="panel coming-panel">
+
+    <span class="tag">CLASSROOM SNN MODULE</span>
+
+    <h2>{{ page.title }}</h2>
+
+    <p>{{ page.description }}</p>
+
+    <div class="info-note">
+        This module's interface is prepared.
+        Its actual processing functionality will be connected
+        and tested in the next development stages.
+    </div>
+
+</div>
+
+{% endif %}
+
+{% endblock %}

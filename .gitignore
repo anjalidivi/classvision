@@ -1,0 +1,42 @@
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE settings
+.vscode/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Uploaded classroom videos
+uploads/*
+!uploads/.gitkeep
+
+# Generated processing outputs
+reports/processed/
+
+# Dataset files (large)
+dataset/
+
+# Temporary files
+*.tmp
+*.log
+
+# Build files
+build/
+dist/
+*.egg-info/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+face_detection/models/face_detection_yunet_2023mar.onnx

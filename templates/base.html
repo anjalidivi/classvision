@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.title }} | CLASSROOM SNN</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="logo">C</div>
+            <div>
+                <h2>CLASSROOM <span>SNN</span></h2>
+                <small>AI CLASSROOM MONITORING</small>
+            </div>
+        </div>
+
+        <p class="menu-heading">WORKSPACE</p>
+
+        <nav>
+            {% for slug, item in pages.items() %}
+            <a href="{{ url_for('page', slug=slug) }}"
+               class="nav-link {% if active_page == slug %}active{% endif %}">
+                <span>
+                    {% if slug == "overview" %}⌂
+                    {% elif slug == "video-upload" %}▣
+                    {% elif slug == "face-training" %}◎
+                    {% elif slug == "face-testing" %}◉
+                    {% elif slug == "expression-training" %}◈
+                    {% elif slug == "expression-testing" %}◇
+                    {% elif slug == "models" %}⬡
+                    {% elif slug == "engagement" %}▥
+                    {% elif slug == "queries" %}✦
+                    {% else %}▤{% endif %}
+                </span>
+                {{ item[0] }}
+            </a>
+            {% endfor %}
+        </nav>
+
+        <div class="sidebar-status">
+            <span class="online-dot"></span>
+            <div>
+                <strong>Dashboard Online</strong>
+                <small>Local monitoring system</small>
+            </div>
+        </div>
+
+    </aside>
+
+
+    <main class="main">
+
+        <header class="topbar">
+
+            <div>
+                <small class="breadcrumb">
+                    CLASSROOM SNN / {{ page.title }}
+                </small>
+                <h1>{{ page.title }}</h1>
+                <p>{{ page.description }}</p>
+            </div>
+
+            <div class="topbar-actions">
+
+                <button class="theme-toggle"
+                        id="themeToggle"
+                        type="button"
+                        onclick="toggleTheme()">
+                    <span id="themeIcon">☾</span>
+                    <span id="themeText">Dark Mode</span>
+                </button>
+
+                <div class="admin-profile">
+                    <div class="admin-avatar">A</div>
+                    <div>
+                        <strong>Admin</strong>
+                        <small>Project Team</small>
+                    </div>
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <section class="content">
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <div class="alert {{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+
+        </section>
+
+
+        <footer>
+            <span>CLASSROOM SNN · SMART CLASSROOM INTELLIGENCE</span>
+            <span>© {{ current_year }}</span>
+        </footer>
+
+    </main>
+
+</div>
+
+
+<script>
+    function applyTheme(theme) {
+        document.documentElement.setAttribute("data-theme", theme);
+
+        const icon = document.getElementById("themeIcon");
+        const text = document.getElementById("themeText");
+
+        if (theme === "dark") {
+            icon.textContent = "☀";
+            text.textContent = "Light Mode";
+        } else {
+            icon.textContent = "☾";
+            text.textContent = "Dark Mode";
+        }
+    }
+
+    function toggleTheme() {
+        const current =
+            document.documentElement.getAttribute("data-theme");
+
+        const next = current === "dark" ? "light" : "dark";
+
+        localStorage.setItem("classroomTheme", next);
+        applyTheme(next);
+    }
+
+    const savedTheme = localStorage.getItem("classroomTheme") || "light";
+    applyTheme(savedTheme);
+</script>
+<!-- Dashboard Interactions -->
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+
+
+</body>
+</html>

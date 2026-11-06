@@ -1,0 +1,75 @@
+{
+    "model": "ClassroomSNN",
+    "dataset": "FER-2013 Official Test Set",
+    "test_images": 7178,
+    "accuracy": 0.38785176929506826,
+    "macro_precision": 0.3078530410933259,
+    "macro_recall": 0.30876438210490903,
+    "macro_f1_score": 0.2802560040015437,
+    "macro_specificity": 0.8914137113854739,
+    "balanced_accuracy": 0.30876438210490903,
+    "macro_roc_auc_ovr": 0.6975381064643109,
+    "matthews_correlation_coefficient": 0.25069889929173655,
+    "cohen_kappa": 0.2414057572780849,
+    "log_loss": 1.608381894167286,
+    "total_inference_time_seconds": 167.04316529998323,
+    "average_inference_time_per_image_seconds": 0.023271547130117476,
+    "throughput_fps": 42.9709290237014,
+    "classification_report": {
+        "angry": {
+            "precision": 0.29430379746835444,
+            "recall": 0.09707724425887265,
+            "f1-score": 0.14599686028257458,
+            "support": 958.0
+        },
+        "disgust": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 111.0
+        },
+        "fear": {
+            "precision": 0.2913907284768212,
+            "recall": 0.04296875,
+            "f1-score": 0.0748936170212766,
+            "support": 1024.0
+        },
+        "happy": {
+            "precision": 0.4312860536138446,
+            "recall": 0.7164599774520857,
+            "f1-score": 0.5384452446515569,
+            "support": 1774.0
+        },
+        "neutral": {
+            "precision": 0.3161764705882353,
+            "recall": 0.45336577453365773,
+            "f1-score": 0.372542485838054,
+            "support": 1233.0
+        },
+        "sad": {
+            "precision": 0.3228346456692913,
+            "recall": 0.26303127506014434,
+            "f1-score": 0.2898806893504198,
+            "support": 1247.0
+        },
+        "surprise": {
+            "precision": 0.4989795918367347,
+            "recall": 0.5884476534296029,
+            "f1-score": 0.5400331308669244,
+            "support": 831.0
+        },
+        "accuracy": 0.38785176929506826,
+        "macro avg": {
+            "precision": 0.3078530410933259,
+            "recall": 0.30876438210490903,
+            "f1-score": 0.2802560040015437,
+            "support": 7178.0
+        },
+        "weighted avg": {
+            "precision": 0.35560059003164335,
+            "recall": 0.38785176929506826,
+            "f1-score": 0.34011584792436106,
+            "support": 7178.0
+        }
+    }
+}
