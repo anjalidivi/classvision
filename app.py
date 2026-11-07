@@ -166,6 +166,44 @@ def load_latest_analysis():
             analysis = json.load(file)
 
         analysis["_report_filename"] = latest_report.name
+                # --------------------------------------------------
+        # LOAD MATCHING PARTICIPATION REPORT
+        # --------------------------------------------------
+
+        video_name = analysis.get("video_name", "")
+
+        if video_name:
+
+            video_stem = Path(video_name).stem
+
+            activity_report = (
+                ACTIVITIES_DIR
+                / f"{video_stem}_activity_report.json"
+            )
+
+            if activity_report.is_file():
+
+                with activity_report.open(
+                    "r",
+                    encoding="utf-8"
+                ) as file:
+
+                    activity_data = json.load(file)
+
+                analysis["participation_analysis"] = (
+                    activity_data.get(
+                        "participation_analysis",
+                        {}
+                    )
+                )
+
+            else:
+
+                analysis["participation_analysis"] = {}
+
+        else:
+
+            analysis["participation_analysis"] = {}
 
         # --------------------------------------------------
         # FIND MATCHING BROWSER VIDEO
@@ -459,6 +497,9 @@ def process_video(filename):
         from integrated_video_processor import (
             process_classroom_video
         )
+        from activity_detector import (
+             process_video as process_activity_video
+        )
 
         print(
             "Starting AI video analysis...",
@@ -468,6 +509,16 @@ def process_video(filename):
         process_classroom_video(
             video_path,
             sample_interval=5
+        )
+        print(
+            "Starting classroom activity analysis...",
+            flush=True
+        )
+        process_activity_video(video_path)
+
+        print(
+            "Classroom activity analysis completed!",
+            flush=True
         )
 
         print(

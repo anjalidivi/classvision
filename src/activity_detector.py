@@ -267,7 +267,79 @@ def draw_pose(frame, landmarks):
                 (0, 255, 0),
                 -1
             )
+def calculate_participation_score(report):
+    total_people = 0
+    total_hand_raises = 0
+    total_head_down = 0
+    total_standing = 0
 
+    trends = []
+
+    for frame in report:
+        people = frame["person_count"]
+        hand_raises = 0
+        head_down = 0
+        standing = 0
+
+        total_people += people
+
+        for pose in frame["poses"]:
+            activities = pose["activities"]
+
+            if "HAND_RAISED" in activities:
+                hand_raises += 1
+
+            if "HEAD_DOWN" in activities:
+                head_down += 1
+
+            if "STANDING" in activities:
+                standing += 1
+
+        total_hand_raises += hand_raises
+        total_head_down += head_down
+        total_standing += standing
+
+        frame_score = (
+            round(hand_raises / people * 100, 2)
+            if people else 0
+        )
+
+        trends.append({
+            "timestamp_seconds": frame["timestamp_seconds"],
+            "participation_score": frame_score,
+            "people_detected": people,
+            "hand_raised": hand_raises
+        })
+
+    score = (
+        round(total_hand_raises / total_people * 100, 2)
+        if total_people else 0
+    )
+
+    if score < 20:
+        classification = "LOW"
+    elif score <= 50:
+        classification = "MEDIUM"
+    else:
+        classification = "HIGH"
+
+    return {
+        "participation_score": score,
+        "participation_classification": classification,
+        "total_person_observations": total_people,
+        "hand_raised_observations": total_hand_raises,
+        "head_down_observations": total_head_down,
+        "standing_observations": total_standing,
+        "participation_trends": trends,
+        "score_description": (
+            "Percentage of detected person observations "
+            "with a raised hand"
+        ),
+        "classification_note": (
+            "Experimental thresholds; not a validated "
+            "measure of student engagement."
+        )
+    }
 
 # --------------------------------------------------
 # PROCESS VIDEO
@@ -507,19 +579,21 @@ def process_video(video_path):
 
     final_report = {
 
-        "video_name": video_path.name,
+    "video_name": video_path.name,
 
-        "fps": round(fps, 2),
+    "fps": round(fps, 2),
 
-        "total_frames": total_frames,
+    "total_frames": total_frames,
 
-        "processed_frames": len(report),
+    "processed_frames": len(report),
 
-        "sample_interval": SAMPLE_INTERVAL,
+    "sample_interval": SAMPLE_INTERVAL,
 
-        "processed_at": datetime.now().isoformat(),
+    "processed_at": datetime.now().isoformat(),
 
-        "results": report
+    "participation_analysis": calculate_participation_score(report),
+
+    "results": report
 
     }
 

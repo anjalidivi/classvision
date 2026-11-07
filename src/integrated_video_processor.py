@@ -24,6 +24,67 @@ REPORT_DIR = PROJECT_ROOT / "reports" / "processed" / "activities"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
+def build_temporal_expression_analysis(
+    expression_history,
+    interval_seconds=10
+):
+
+    analysis = {}
+
+    for student_id, records in expression_history.items():
+
+        intervals = {}
+
+        for record in records:
+
+            timestamp = record["timestamp_seconds"]
+
+            interval_start = (
+                int(timestamp // interval_seconds)
+                * interval_seconds
+            )
+
+            intervals.setdefault(
+                interval_start,
+                Counter()
+            )
+
+            intervals[interval_start][
+                record["expression"]
+            ] += 1
+
+        interval_results = []
+
+        for start_time, counts in sorted(intervals.items()):
+
+            dominant_expression = counts.most_common(1)[0][0]
+
+            interval_results.append({
+                "start_seconds": start_time,
+                "end_seconds": start_time + interval_seconds,
+                "dominant_expression": dominant_expression,
+                "expression_counts": dict(counts),
+                "total_predictions": sum(counts.values())
+            })
+
+        changes = 0
+
+        for index in range(1, len(records)):
+
+            if (
+                records[index]["expression"]
+                != records[index - 1]["expression"]
+            ):
+                changes += 1
+
+        analysis[student_id] = {
+            "total_expression_predictions": len(records),
+            "expression_changes": changes,
+            "expression_timeline": interval_results
+        }
+
+    return analysis
+
 
 def find_ffmpeg():
     ffmpeg = shutil.which("ffmpeg")
@@ -183,6 +244,7 @@ def process_classroom_video(video_path, sample_interval=5):
     expression_counts = Counter()
     student_expression_counts = {}
     latest_expressions = {}
+    student_expression_history={}
     frame_results = []
 
     # This list is maintained between detection frames.
@@ -286,11 +348,18 @@ def process_classroom_video(video_path, sample_interval=5):
                         student_id,
                         Counter()
                     )
-
                     if detection and expression != "unknown":
-                        student_expression_counts[
-                            student_id
-                        ][expression] += 1
+                        student_expression_history.setdefault(
+                            student_id,
+                            []
+                            ).append({
+                                "frame_number": frame_number,
+                                "timestamp_seconds": round(
+                                    frame_number / fps, 3
+                                    ),
+                                    "expression": expression,
+                                    "confidence": round(float(confidence), 4)
+                            })
 
                     x, y, w, h = student["box"]
 
@@ -405,6 +474,10 @@ def process_classroom_video(video_path, sample_interval=5):
             student_id: dict(counts)
             for student_id, counts in student_expression_counts.items()
         },
+        "temporal_expression_analysis":
+        build_temporal_expression_analysis(student_expression_history,
+                                           interval_seconds=10
+    ),
 
         "results": frame_results,
 

@@ -3,7 +3,7 @@
 
 {% block content %}
 
-{% if active_page == "overview" or active_page == "engagement" %}
+{% if active_page == "overview" %}
 
 {% set has_analysis = analysis and analysis.get("video_name") %}
 {% set expression_counts = analysis.get("expression_distribution", {}) if has_analysis else {} %}
@@ -392,6 +392,185 @@
     These FER-2013 test metrics are not classroom engagement scores.
 </div>
 
+{% elif active_page == "engagement" %}
+
+{% set has_analysis = analysis and analysis.get("video_name") %}
+{% set participation = analysis.get("participation_analysis", {}) if has_analysis else {} %}
+{% set has_participation = participation and participation.get("participation_score") is not none %}
+
+<div class="section-heading">
+    <div>
+        <h2>Engagement Results</h2>
+        <p>Classroom participation analysis</p>
+    </div>
+    <span class="tag">PARTICIPATION ANALYSIS</span>
+</div>
+
+{% if has_participation %}
+
+<div class="stats-grid">
+
+    <div class="metric-card">
+        <span>Participation Score</span>
+        <strong>{{ "%.2f"|format(participation.get("participation_score", 0)|float) }}%</strong>
+    </div>
+
+    <div class="metric-card">
+        <span>Classification</span>
+        <strong>{{ participation.get("participation_classification", "--") }}</strong>
+    </div>
+
+    <div class="metric-card">
+        <span>Person Observations</span>
+        <strong>{{ participation.get("total_person_observations", 0) }}</strong>
+    </div>
+
+    <div class="metric-card">
+        <span>Hand Raised</span>
+        <strong>{{ participation.get("hand_raised_observations", 0) }}</strong>
+    </div>
+
+</div>
+
+<div class="panel">
+    <div class="panel-heading">
+        <div>
+            <h3>Participation Trends</h3>
+            <p>Participation throughout the video</p>
+        </div>
+        <span class="tag">TIMELINE</span>
+    </div>
+
+    {% for trend in participation.get("participation_trends", []) %}
+
+    <div class="expression-row">
+        <span>{{ "%.1f"|format(trend.get("timestamp_seconds", 0)|float) }}s</span>
+
+        <div class="expression-track">
+            <div style="width: {{ [[trend.get('participation_score', 0)|float, 0]|max, 100]|min }}%; height:100%; background:#22c55e; border-radius:inherit;"></div>
+        </div>
+
+        <strong>{{ "%.1f"|format(trend.get("participation_score", 0)|float) }}%</strong>
+    </div>
+
+    {% endfor %}
+</div>
+
+<div class="panel">
+    <h3>Additional Activity Observations</h3>
+    <p>Head down: <strong>{{ participation.get("head_down_observations", 0) }}</strong></p>
+    <p>Standing: <strong>{{ participation.get("standing_observations", 0) }}</strong></p>
+    <p class="muted">{{ participation.get("score_description", "") }}</p>
+    <p class="muted">{{ participation.get("classification_note", "") }}</p>
+</div>
+
+{% else %}
+
+<div class="panel empty-state">
+    <h3>No participation results available</h3>
+    <p>Upload and process a classroom video to generate participation analysis.</p>
+</div>
+
+{% endif %}
+
+{% elif active_page == "expression-testing" %}
+
+{% set has_analysis = analysis and analysis.get("video_name") %}
+{% set expression_counts = analysis.get("expression_distribution", {}) if has_analysis else {} %}
+{% set total = namespace(value=0) %}
+
+{% for value in expression_counts.values() %}
+    {% set total.value = total.value + (value|int) %}
+{% endfor %}
+
+<div class="section-heading">
+    <div>
+        <h2>Expression Testing Results</h2>
+        <p>Facial expression predictions from classroom video analysis.</p>
+    </div>
+    <span class="tag">EXPRESSION ANALYSIS</span>
+</div>
+
+{% if has_analysis %}
+
+<div class="stats-grid">
+    <div class="metric-card">
+        <span>Total Predictions</span>
+        <strong>{{ total.value }}</strong>
+    </div>
+
+    <div class="metric-card">
+        <span>Expression Classes</span>
+        <strong>7</strong>
+    </div>
+
+    <div class="metric-card">
+        <span>Students Tracked</span>
+        <strong>{{ analysis.get("unique_temporary_student_ids", 0) }}</strong>
+    </div>
+
+    <div class="metric-card">
+        <span>Frames Processed</span>
+        <strong>{{ analysis.get("processed_frames", 0) }}</strong>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-heading">
+        <div>
+            <h3>Expression Distribution</h3>
+            <p>Prediction count and percentage for each class.</p>
+        </div>
+        <span class="tag">FER CLASSES</span>
+    </div>
+
+    {% for expression in ["Happy", "Neutral", "Sad", "Angry", "Fear", "Surprise", "Disgust"] %}
+
+        {% set count = expression_counts.get(expression|lower, 0)|int %}
+
+        {% if total.value > 0 %}
+            {% set percentage = (count / total.value * 100)|round(1) %}
+        {% else %}
+            {% set percentage = 0 %}
+        {% endif %}
+
+        <div class="expression-row">
+            <span>{{ expression }}</span>
+
+            <div class="expression-track">
+                <div style="width: {{ percentage }}%; height:100%; background:#22c55e; border-radius:inherit;"></div>
+            </div>
+
+            <strong>{{ count }} ({{ percentage }}%)</strong>
+        </div>
+
+    {% endfor %}
+
+    <p class="muted">
+        Total expression predictions: {{ total.value }}
+    </p>
+</div>
+
+<div class="panel">
+    <h3>Analysis Information</h3>
+    <p>Video: {{ analysis.get("video_name", "--") }}</p>
+    <p>Video FPS: {{ analysis.get("video_fps", "--") }}</p>
+    <p>Sampling interval: {{ analysis.get("sample_interval", "--") }}</p>
+    <p class="muted">
+        Expression predictions are experimental model outputs.
+        They do not establish a student's actual emotional state.
+    </p>
+</div>
+
+{% else %}
+
+<div class="panel empty-state">
+    <h3>No expression results available</h3>
+    <p>Upload and process a classroom video to generate expression predictions.</p>
+</div>
+
+{% endif %}
+
 
 {% elif active_page == "video-upload" %}
 
@@ -471,6 +650,101 @@
     {% endif %}
 
 </div>
+
+{% elif active_page == "monitoring" %}
+
+{% set has_analysis = analysis and analysis.get("video_name") %}
+
+<div class="section-heading">
+    <div>
+        <h2>Overall Classroom Monitoring</h2>
+        <p>Combined classroom video and AI analysis overview.</p>
+    </div>
+    <span class="tag">CLASSROOM MONITORING</span>
+</div>
+
+{% if has_analysis %}
+
+<div class="stats-grid">
+
+    <div class="metric-card">
+        <span>Students Tracked</span>
+        <strong>{{ analysis.get("unique_temporary_student_ids", 0) }}</strong>
+    </div>
+
+    <div class="metric-card">
+        <span>Face Detections</span>
+        <strong>{{ analysis.get("total_face_detections", 0) }}</strong>
+    </div>
+
+    <div class="metric-card">
+        <span>Frames Processed</span>
+        <strong>{{ analysis.get("processed_frames", 0) }}</strong>
+    </div>
+
+    <div class="metric-card">
+        <span>Video FPS</span>
+        <strong>{{ analysis.get("video_fps", "--") }}</strong>
+    </div>
+
+</div>
+
+<div class="panel">
+    <div class="panel-heading">
+        <div>
+            <h3>Processed Classroom Video</h3>
+            <p>Annotated video with face tracking and analysis overlays.</p>
+        </div>
+        <span class="tag">PROCESSED VIDEO</span>
+    </div>
+
+    {% if latest_video_url %}
+
+        <video controls width="100%" style="border-radius: 12px; background: #000;">
+            <source src="{{ latest_video_url }}" type="video/mp4">
+            Your browser does not support video playback.
+        </video>
+
+    {% else %}
+
+        <div class="empty-state">
+            <p>Browser-compatible annotated video is not available.</p>
+        </div>
+
+    {% endif %}
+</div>
+
+<div class="panel">
+    <h3>Classroom Analysis Summary</h3>
+
+    <p><strong>Video:</strong> {{ analysis.get("video_name", "--") }}</p>
+
+    <p><strong>Sampling interval:</strong>
+        {{ analysis.get("sample_interval", "--") }}
+    </p>
+
+    <p><strong>Total video frames:</strong>
+        {{ analysis.get("total_video_frames", "--") }}
+    </p>
+
+    <p><strong>Expression predictions:</strong>
+        {{ analysis.get("expression_distribution", {})|length }}
+        expression categories recorded
+    </p>
+
+    <a href="{{ url_for('download_report') }}" class="primary-button">
+        Download Full Analysis Report
+    </a>
+</div>
+
+{% else %}
+
+<div class="panel empty-state">
+    <h3>No classroom monitoring data available</h3>
+    <p>Upload and process a classroom video to see monitoring results.</p>
+</div>
+
+{% endif %}
 
 
 {% elif active_page == "models" %}
