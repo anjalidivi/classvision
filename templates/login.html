@@ -1,0 +1,73 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width:430px; margin:80px auto; padding:35px; background:#17243a; border-radius:15px; color:white;">
+    <h2 style="text-align:center;">CLASSROOM SNN</h2>
+    <p style="text-align:center; color:#aab8cc;">Sign in to your account</p>
+
+    <form id="loginForm">
+        <label>Username</label>
+        <input
+            type="text"
+            id="username"
+            required
+            placeholder="Enter username"
+            style="width:100%; padding:12px; margin:10px 0 20px; box-sizing:border-box;"
+        >
+
+        <label>Password</label>
+        <input
+            type="password"
+            id="password"
+            required
+            placeholder="Enter password"
+            style="width:100%; padding:12px; margin:10px 0 20px; box-sizing:border-box;"
+        >
+
+        <button type="submit" style="width:100%; padding:13px; cursor:pointer;">
+            Login
+        </button>
+    </form>
+
+    <p id="message" style="text-align:center; margin-top:15px;"></p>
+
+    <p style="text-align:center; margin-top:20px;">
+        Don't have an account?
+        <a href="/register">Register here</a>
+    </p>
+</div>
+
+<script>
+document.getElementById("loginForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    const message = document.getElementById("message");
+
+    try {
+        const response = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                username: document.getElementById("username").value,
+                password: document.getElementById("password").value
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            message.style.color = "#4ade80";
+            message.textContent = "Login successful!";
+            window.location.href = "/page/overview";
+        } else {
+            message.style.color = "#f87171";
+            message.textContent = result.message || "Login failed.";
+        }
+    } catch (error) {
+        message.style.color = "#f87171";
+        message.textContent = "Unable to connect to the server.";
+    }
+});
+</script>
+{% endblock %}

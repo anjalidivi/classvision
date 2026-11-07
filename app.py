@@ -1,4 +1,10 @@
-
+from database.analytics_routes import analytics_bp
+from database.engagement_routes import engagement_bp
+from database.student_routes import student_bp
+from database.report_generator import generate_engagement_pdf
+from database import db
+from database.auth_routes import auth_bp
+from flask import session
 from flask import (
     Flask,
     render_template,
@@ -7,6 +13,7 @@ from flask import (
     url_for,
     flash,
     send_from_directory,
+    send_file,
     abort
 )
 
@@ -17,9 +24,68 @@ import sys
 from datetime import datetime
 
 
-app = Flask(__name__)
-app.secret_key = "classroom-snn-local-key"
+import os
 
+app = Flask(__name__)
+
+app.secret_key = os.environ.get(
+    "SECRET_KEY",
+    "classroom-snn-development-key-change-before-deployment"
+)
+
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = False
+app.config["PERMANENT_SESSION_LIFETIME"] = 1800
+# --------------------------------------------------
+# DATABASE CONFIGURATION
+# --------------------------------------------------
+
+app.config["SQLALCHEMY_DATABASE_URI"] = (
+    f"sqlite:///{(Path(__file__).resolve().parent / 'instance' / 'classroom.db').as_posix()}"
+)
+
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db.init_app(app)
+app.register_blueprint(student_bp)
+app.register_blueprint(engagement_bp)
+app.register_blueprint(analytics_bp)
+app.register_blueprint(auth_bp)
+# Protect dashboard pages and APIs
+@app.before_request
+def require_login():
+
+    # Pages and endpoints accessible without login
+    allowed_endpoints = [
+        "static",
+        "auth.register",
+        "auth.login",
+        "auth.logout",
+        "auth.current_user"
+    ]
+
+    if request.endpoint in allowed_endpoints:
+        return None
+
+    # Allow login and registration pages
+    if request.path in ["/login", "/register"]:
+        return None
+
+    # Check whether the user is logged in
+    if not session.get("user_id"):
+
+        # API requests receive a JSON response
+        if request.path.startswith("/api/"):
+            return {
+                "success": False,
+                "message": "Please log in to access this resource."
+            }, 401
+
+        # Browser requests go to the login page
+        return redirect(url_for("login_page"))
+
+    return None
 
 # --------------------------------------------------
 # PROJECT DIRECTORIES
@@ -249,6 +315,48 @@ def get_videos():
 # --------------------------------------------------
 # DASHBOARD HOME
 # --------------------------------------------------
+# Login page
+@app.route("/login")
+def login_page():
+    if session.get("user_id"):
+        return redirect(url_for("page", slug="overview"))
+
+    return render_template(
+        "login.html",
+        page={
+            "title": "Login",
+            "description": "Sign in to your account"
+        },
+        pages=PAGES,
+        active_page="login",
+        current_year=datetime.now().year,
+        metrics={},
+        videos=[],
+        analysis={},
+        latest_video_url=None
+    )
+
+
+# Registration page
+@app.route("/register")
+def register_page():
+    if session.get("user_id"):
+        return redirect(url_for("page", slug="overview"))
+
+    return render_template(
+        "register.html",
+        page={
+            "title": "Register",
+            "description": "Create your account"
+        },
+        pages=PAGES,
+        active_page="register",
+        current_year=datetime.now().year,
+        metrics={},
+        videos=[],
+        analysis={},
+        latest_video_url=None
+    )
 
 @app.route("/")
 def home():
@@ -539,6 +647,39 @@ def latest_processed_video():
 # --------------------------------------------------
 # DOWNLOAD CLASSROOM ANALYSIS REPORT
 # --------------------------------------------------
+# --------------------------------------------------
+# DOWNLOAD DATABASE ENGAGEMENT PDF REPORT
+# --------------------------------------------------
+
+@app.route("/download-engagement-report")
+def download_engagement_report():
+
+    try:
+        pdf_buffer = generate_engagement_pdf()
+
+        filename = (
+            "classroom_engagement_report_"
+            + datetime.now().strftime("%Y%m%d_%H%M%S")
+            + ".pdf"
+        )
+
+        return send_file(
+            pdf_buffer,
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=filename
+        )
+
+    except Exception as error:
+
+        app.logger.exception("PDF report generation failed")
+
+        flash(
+            "Unable to generate engagement report. Please check the server logs.",
+            "error"
+        )
+
+        return redirect(url_for("page", slug="overview"))
 
 @app.route("/download-report")
 def download_report():
@@ -588,6 +729,13 @@ def view_report(filename):
 # --------------------------------------------------
 # RUN APPLICATION
 # --------------------------------------------------
+# --------------------------------------------------
+# INITIALIZE DATABASE TABLES
+# --------------------------------------------------
+
+with app.app_context():
+    db.create_all()
+    print("Database tables initialized successfully!")
 
 if __name__ == "__main__":
 
