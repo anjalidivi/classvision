@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from shared_video_processor import create_face_detector, process_frame
 from face_tracker import FaceTracker
+from optical_flow_tracker import OpticalFlowTracker
 from expression_predictor import ExpressionPredictor
 
 UPLOAD_DIR = PROJECT_ROOT / "uploads"
@@ -177,6 +178,7 @@ def process_classroom_video(video_path, sample_interval=5):
 
     detector = None
     tracker = FaceTracker()
+    optical_tracker = OpticalFlowTracker()
 
     expression_counts = Counter()
     student_expression_counts = {}
@@ -307,13 +309,15 @@ def process_classroom_video(video_path, sample_interval=5):
                         )
                     })
 
-                # IMPORTANT:
                 # Store the latest tracks. Do not clear them
-                # on the four frames between detections.
+                # on the frames between detections.
                 display_tracks = [
                     dict(student)
                     for student in tracked_faces
                 ]
+
+                # Reset Optical Flow using fresh detections.
+                optical_tracker.reset(frame, display_tracks)
 
                 active_ids = {
                     student["student_id"]
@@ -348,8 +352,15 @@ def process_classroom_video(video_path, sample_interval=5):
             # STEP 2: DRAW ON EVERY FRAME
             # -----------------------------------------
 
-            # This is OUTSIDE the detection condition.
-            # Therefore boxes remain visible between sampled frames.
+            # Update face positions between MediaPipe detections.
+            # Fresh MediaPipe boxes are used on sampled frames.
+            if frame_number % sample_interval != 0:
+                display_tracks = optical_tracker.update(
+                    frame,
+                    display_tracks
+                )
+
+            # Draw updated bounding boxes on every frame.
             draw_student_boxes(frame, display_tracks)
 
             # Write every frame to the output video.
