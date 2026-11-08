@@ -738,6 +738,134 @@ with app.app_context():
     print("Database tables initialized successfully!")
 
 if __name__ == "__main__":
+        app.run(debug=True, use_reloader=False)
+    
+# ==================================================
+# LIVE WEBCAM FACE DETECTION API
+# ==================================================
+
+import base64
+import cv2
+import numpy as np
+
+from flask import jsonify
+
+from src.shared_video_processor import (
+    create_face_detector,
+    process_frame
+)
+
+from src.face_tracker import FaceTracker
+
+
+# Temporary webcam session objects
+webcam_detector = None
+webcam_tracker = None
+
+
+@app.route("/api/webcam/detect", methods=["POST"])
+def webcam_detect():
+
+    global webcam_detector, webcam_tracker
+
+    try:
+        data = request.get_json(silent=True) or {}
+
+        image_data = data.get("image", "")
+
+        if "," not in image_data:
+            return jsonify({
+                "success": False,
+                "message": "Invalid webcam frame."
+            }), 400
+
+        # Decode browser image
+        encoded_image = image_data.split(",", 1)[1]
+
+        image_bytes = base64.b64decode(encoded_image)
+
+        image_array = np.frombuffer(
+            image_bytes,
+            dtype=np.uint8
+        )
+
+        frame = cv2.imdecode(
+            image_array,
+            cv2.IMREAD_COLOR
+        )
+
+        if frame is None:
+            return jsonify({
+                "success": False,
+                "message": "Unable to decode webcam frame."
+            }), 400
+
+        # Initialize detector and tracker once per active session
+        if webcam_detector is None:
+            webcam_detector = create_face_detector()
+
+        if webcam_tracker is None:
+            webcam_tracker = FaceTracker()
+
+        # MediaPipe face detection
+        detections = process_frame(
+            frame,
+            webcam_detector
+        )
+
+        # Assign temporary tracking IDs
+        tracked_faces = webcam_tracker.update(
+            detections
+        )
+
+        faces = []
+
+        for face in tracked_faces:
+
+            x, y, width, height = face["box"]
+
+            faces.append({
+                "student_id": face["student_id"],
+                "box": [
+                    int(x),
+                    int(y),
+                    int(width),
+                    int(height)
+                ]
+            })
+
+        return jsonify({
+            "success": True,
+            "face_count": len(faces),
+            "faces": faces
+        })
+
+    except Exception as error:
+
+        app.logger.exception("Webcam detection failed")
+
+        return jsonify({
+            "success": False,
+            "message": str(error)
+        }), 500
+
+
+@app.route("/api/webcam/stop", methods=["POST"])
+def webcam_stop():
+
+    global webcam_detector, webcam_tracker
+
+    if webcam_detector is not None:
+        webcam_detector.close()
+        webcam_detector = None
+
+    webcam_tracker = None
+
+    return jsonify({
+        "success": True,
+        "message": "Webcam AI session stopped."
+    })
+
 
     print("\n======================================")
     print("       CLASSROOM SNN DASHBOARD")

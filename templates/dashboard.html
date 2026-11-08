@@ -510,7 +510,102 @@
 </div>
 
 
+
+{% elif active_page == "monitoring" %}
+
+<div class="section-heading">
+    <h2>Live Classroom Monitoring</h2>
+    <p>Real-time webcam monitoring and face detection</p>
+</div>
+
+<div class="panel">
+    <div class="panel-heading">
+        <div>
+            <h3>Webcam Live Feed</h3>
+            <p>Camera-based classroom observation</p>
+        </div>
+        <span class="status-tag" id="cameraStatus">CAMERA OFF</span>
+    </div>
+
+    <div style="background:#07111c; border-radius:10px; padding:10px;">
+        <video id="webcamVideo"
+               autoplay
+               muted
+               playsinline
+               style="width:100%; max-height:480px; object-fit:contain; display:block;">
+        </video>
+
+        <div id="cameraPlaceholder"
+             style="text-align:center; padding:65px 15px; color:#91abc2;">
+            <h3>Webcam not started</h3>
+            <p>Click Start Camera to begin live monitoring.</p>
+        </div>
+    </div>
+
+    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:18px;">
+        <button type="button" class="primary-button" id="startCamera">
+            Start Camera
+        </button>
+
+        <button type="button" class="secondary-button" id="stopCamera">
+            Stop Camera
+        </button>
+    </div>
+
+    <p id="cameraMessage" class="muted" style="margin-top:14px;">
+        Waiting for camera permission.
+    </p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div>
+            <span>FACES DETECTED</span>
+            <h2 id="liveFaceCount">0</h2>
+            <small>Current camera frame</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div>
+            <span>TRACKING IDs</span>
+            <h2 id="liveTrackingCount">0</h2>
+            <small>Temporary session IDs</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div>
+            <span>CAMERA STATUS</span>
+            <h2 id="liveCameraStatus">OFF</h2>
+            <small>Webcam connection</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div>
+            <span>AI ANALYSIS</span>
+            <h2 id="liveAIStatus">PENDING</h2>
+            <small>Waiting for AI integration</small>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <h3>AI Engagement Analysis</h3>
+    <p class="muted">
+        EMS-ResNet expression recognition and LIF-based SNN
+        temporal engagement results will appear here after integration.
+    </p>
+    <div id="liveEngagementResults" class="empty-state">
+        No live AI predictions available yet.
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/webcam.js') }}"></script>
+
 {% else %}
+
 
 <div class="panel coming-panel">
 
